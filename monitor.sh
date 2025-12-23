@@ -54,10 +54,12 @@ do
     # --- 1. CPU Usage ---
     # Gathers CPU idle percentage from `sar` (part of sysstat package).
     # The result is subtracted from 100 to get the total usage percentage.
-    CPU_IDLE=$(sar 1 1 | grep "Average:" | awk '{print $NF}')
+    # Comma is replaced with a dot for `bc` compatibility.
+    CPU_IDLE=$(sar 1 1 | grep "Average:" | awk '{print $NF}' | sed 's/,/./')
     # If `sar` fails, default to 100% idle (0% usage) to prevent errors.
     CPU_IDLE=${CPU_IDLE:-100} 
     CPU_USAGE=$(echo "100 - $CPU_IDLE" | bc | awk -F. '{print $1}')
+    CPU_USAGE=${CPU_USAGE:-0} # Default to 0 if bc fails
 
     # --- 2. Disk Usage ---
     # Gathers the usage percentage for the root filesystem (/).
@@ -73,14 +75,16 @@ do
 
     # --- 4. Network Usage ---
     # Gathers network statistics (receive and transmit) for the specified interface.
-    NET_STATS=$(sar -n DEV 1 1 | grep "Average:" | grep $NET_INTERFACE)
-    NET_RX=$(echo "$NET_STATS" | awk '{print $5}')
-    NET_TX=$(echo "$NET_STATS" | awk '{print $6}')
+    NET_STATS=$(sar -n DEV 1 1 | grep "Average:" | grep "$NET_INTERFACE")
+    # Replace comma with dot for bc compatibility
+    NET_RX=$(echo "$NET_STATS" | awk '{print $5}' | sed 's/,/./')
+    NET_TX=$(echo "$NET_STATS" | awk '{print $6}' | sed 's/,/./')
     # If `sar` fails, default to 0 to prevent errors.
     NET_RX=${NET_RX:-0} 
     NET_TX=${NET_TX:-0} 
     # Calculate the total network traffic (upload + download) in KB/s.
     NET_TOTAL_KB=$(echo "$NET_RX + $NET_TX" | bc | awk -F. '{print $1}')
+    NET_TOTAL_KB=${NET_TOTAL_KB:-0} # Default to 0 if bc fails
     
     # --- 5. Connectivity ---
     # Pings each host in the CHECK_HOSTS array to verify external connectivity.
@@ -99,10 +103,8 @@ do
     echo "$TIMESTAMP | CPU: $CPU_USAGE% | Disk: $DISK_USAGE% | Mem: $MEM_USAGE% | Net: $NET_TOTAL_KB KB/s | Connectivity: $CONNECTIVITY_STATUS" >> $LOG_FILE
 
     # --- Check for Threshold Breaches ---
-    # Compares the gathered metrics against the predefined thresholds.
-    # If a threshold is breached, a descriptive alert is written to the alert log.
-
-    if (( $(echo "$CPU_USAGE > $CPU_THRESHOLD" |bc -l) )); then
+    # Compares the gathered metrics against the predefined thresholds using shell arithmetic.
+    if (( CPU_USAGE > CPU_THRESHOLD )); then
         echo "[$TIMESTAMP] CPU ALERT: Usage is $CPU_USAGE%, exceeding threshold of $CPU_THRESHOLD%." >> $ALERT_FILE
         # If CPU usage is high, log the top 5 processes to a separate file for later analysis.
         {
@@ -113,15 +115,15 @@ do
         } >> "$CPU_SPIKE_LOG"
     fi
 
-    if [ "$DISK_USAGE" -gt "$DISK_THRESHOLD" ]; then
+    if (( DISK_USAGE > DISK_THRESHOLD )); then
         echo "[$TIMESTAMP] DISK ALERT: Usage is $DISK_USAGE%, exceeding threshold of $DISK_THRESHOLD%." >> $ALERT_FILE
     fi
 
-    if [ "$MEM_USAGE" -gt "$MEM_THRESHOLD" ]; then
+    if (( MEM_USAGE > MEM_THRESHOLD )); then
         echo "[$TIMESTAMP] MEMORY ALERT: Usage is $MEM_USAGE%, exceeding threshold of $MEM_THRESHOLD%." >> $ALERT_FILE
     fi
 
-    if (( $(echo "$NET_TOTAL_KB > $NET_THRESHOLD" |bc -l) )); then
+    if (( NET_TOTAL_KB > NET_THRESHOLD )); then
         echo "[$TIMESTAMP] NETWORK ALERT: Usage is $NET_TOTAL_KB KB/s, exceeding threshold of $NET_THRESHOLD KB/s." >> $ALERT_FILE
     fi
 
