@@ -1,0 +1,12 @@
+# Telegram Bot Configuration
+#
+# This file contains the credentials for the Telegram bot.
+# 1. Create a bot by talking to @BotFather on Telegram.
+# 2. Copy the token you receive and paste it here.
+# 3. Get your Chat ID by talking to a bot like @userinfobot.
+#
+# IMPORTANT: This file should NOT be committed to version control.
+# The .gitignore file should contain a line for "telegram.conf".
+
+BOT_TOKEN="YOUR_BOT_TOKEN_HERE"
+CHAT_ID="YOUR_CHAT_ID_HERE"

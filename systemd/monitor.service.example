@@ -1,0 +1,22 @@
+[Unit]
+Description=System Resource Monitor Service
+Documentation=https://github.com/YOUR_USERNAME/system-monitor-telegram
+After=network.target
+
+[Service]
+Type=simple
+
+# --- IMPORTANT ---
+# You must change these paths to match the location where you place the scripts.
+# For example, /opt/system-monitor-telegram/
+ExecStart=/path/to/your/scripts/monitor.sh
+WorkingDirectory=/path/to/your/scripts/
+
+Restart=always
+RestartSec=10
+# It's recommended to run this as a non-root user if possible,
+# but 'sar' may require elevated privileges.
+User=root
+
+[Install]
+WantedBy=multi-user.target
