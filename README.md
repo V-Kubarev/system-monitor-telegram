@@ -92,3 +92,9 @@ You can check the status of the services at any time with:
 sudo systemctl status monitor.service
 sudo systemctl status notifier.service
 ```
+
+---
+
+**Автор:** Василий Кубарев  
+**Сайт:** [kubarev.space](http://kubarev.space)  
+**Другие проекты:** [GitHub Profile](https://github.com/V-Kubarev)
